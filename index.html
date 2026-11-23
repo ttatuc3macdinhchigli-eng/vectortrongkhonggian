@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Học Toán Cùng Thầy Tôn Tú - Véctơ Trong Không Gian (Toán 12)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- KaTeX CDN & Auto-render extension -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        * {
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #090d16;
+            margin: 0;
+            padding: 0;
+        }
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+        /* 3D Label Overlays */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            transition: opacity 0.15s ease-out;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.9);
+            z-index: 10;
+        }
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Glow Effects */
+        .glow-gold {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .katex {
+            font-size: 1.02em;
+        }
+        #canvas-container canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen w-screen flex flex-col overflow-hidden">
+
+    <!-- ================================================================= -->
+    <!-- TOP FIXED BRAND HEADER BANNER                                      -->
+    <!-- ================================================================= -->
+    <header class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black py-2.5 px-4 shadow-xl border-b border-amber-300 text-sm md:text-base tracking-wider uppercase flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-lg md:text-xl"></i>
+            <span class="font-extrabold tracking-wide">HỌC TOÁN CÙNG THẦY TÔN TÚ</span>
+        </div>
+        
+        <!-- Mobile View Switcher Buttons (Only visible on small screens) -->
+        <div class="flex md:hidden items-center bg-slate-950/40 rounded-lg p-0.5 text-xs text-white">
+            <button id="mobile-tab-3d" class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition">
+                <i class="fa-solid fa-cube mr-1"></i> 3D
+            </button>
+            <button id="mobile-tab-math" class="px-2.5 py-1 rounded-md hover:bg-slate-800 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> Lý thuyết
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (SPLIT: SIDEBAR LEFT + 3D VIEWPORT RIGHT)  -->
+    <!-- ================================================================= -->
+    <div class="flex-1 w-full flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR PANEL -->
+        <aside id="sidebar-panel" class="custom-scroll w-full md:w-[410px] lg:w-[440px] shrink-0 h-full flex flex-col bg-slate-900/95 border-r border-slate-800 z-20 shadow-2xl overflow-y-auto p-3.5 gap-3 transition-all duration-300 hidden md:flex">
+            
+            <!-- SIDEBAR HEADER BADGE -->
+            <div class="glass-card p-3 rounded-xl flex items-center gap-3 border border-cyan-500/30 shadow-lg shrink-0">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm md:text-base leading-tight tracking-wide text-white">
+                        VÉCTƠ TRONG KHÔNG GIAN
+                    </h1>
+                    <p class="text-[11px] text-cyan-400 font-medium mt-0.5">
+                        Hình học 12 • Hình hộp chữ nhật <span id="badge-box-name">$ABCD.A'B'C'D'$</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION 1: CHỌN CHỦ ĐỀ NỘI DUNG BÀI HỌC SGK TOÁN 12 -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-list-check text-cyan-400 mr-1"></i> Nội dung SGK Toán 12</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <!-- Topic 1 -->
+                    <button id="topic-relations" class="topic-btn p-2 rounded-xl border border-cyan-500/50 bg-cyan-950/40 hover:bg-cyan-900/40 text-left transition flex items-center gap-2 group active">
+                        <i class="fa-solid fa-arrows-left-right text-cyan-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-cyan-300">1. Cùng phương, bằng nhau</div>
+                            <div class="text-[10px] text-slate-400">Cùng hướng, bằng, đối</div>
+                        </div>
+                    </button>
+
+                    <!-- Topic 2 -->
+                    <button id="topic-add" class="topic-btn p-2 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-cyan-950/30 text-left transition flex items-center gap-2 group">
+                        <i class="fa-solid fa-plus text-emerald-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-slate-300 group-[.active]:text-emerald-300">2. Phép cộng & HH</div>
+                            <div class="text-[10px] text-slate-400">QT Tam giác, HBH, HH</div>
+                        </div>
+                    </button>
+
+                    <!-- Topic 3 -->
+                    <button id="topic-sub" class="topic-btn p-2 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-purple-950/30 text-left transition flex items-center gap-2 group">
+                        <i class="fa-solid fa-minus text-purple-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-slate-300 group-[.active]:text-purple-300">3. Phép trừ & Véctơ đối</div>
+                            <div class="text-[10px] text-slate-400">$\vec{u} - \vec{v} = \vec{u} + (-\vec{v})$</div>
+                        </div>
+                    </button>
+
+                    <!-- Topic 4 -->
+                    <button id="topic-scale" class="topic-btn p-2 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-amber-950/30 text-left transition flex items-center gap-2 group">
+                        <i class="fa-solid fa-xmark text-amber-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-slate-300 group-[.active]:text-amber-300">4. Tích số với Véctơ</div>
+                            <div class="text-[10px] text-slate-400">Phép nhân $k\vec{u}$</div>
+                        </div>
+                    </button>
+
+                    <!-- Topic 5 -->
+                    <button id="topic-dot" class="topic-btn p-2 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-rose-950/30 text-left transition flex items-center gap-2 group">
+                        <i class="fa-solid fa-angle text-rose-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-slate-300 group-[.active]:text-rose-300">5. Góc & Tích vô hướng</div>
+                            <div class="text-[10px] text-slate-400">$\vec{u} \cdot \vec{v} = |\vec{u}||\vec{v}|\cos\theta$</div>
+                        </div>
+                    </button>
+
+                    <!-- Topic 6 -->
+                    <button id="topic-mid" class="topic-btn p-2 rounded-xl border border-slate-800 bg-slate-800/40 hover:bg-indigo-950/30 text-left transition flex items-center gap-2 group">
+                        <i class="fa-solid fa-bullseye text-indigo-400"></i>
+                        <div>
+                            <div class="font-bold text-[11px] text-slate-300 group-[.active]:text-indigo-300">6. Trung điểm & Tâm</div>
+                            <div class="text-[10px] text-slate-400">$\vec{MA}+\vec{MB}=2\vec{MI}$</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: DANH SÁCH VÍ DỤ MINH HỌA SGK -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-star text-amber-400 mr-1"></i> Ví dụ minh họa SGK</span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-1.5 text-xs" id="preset-container">
+                    <!-- Dynamic Preset Buttons -->
+                </div>
+            </div>
+
+            <hr class="border-slate-800 shrink-0">
+
+            <!-- SECTION 3: TÙY CHỈNH THÔNG SỐ VÉCTƠ & KÍCH THƯỚC HÌNH HỘP -->
+            <div class="space-y-2 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-sliders text-cyan-400 mr-1"></i> Tùy chỉnh thông số</span>
+                    <button id="btn-reset-dim" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition">
+                        Đặt về (4, 3, 3)
+                    </button>
+                </div>
+
+                <!-- Cuboid Dimensions Sliders -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800 text-center">
+                        <div class="text-[10px] text-red-400 font-bold mb-1">Cạnh a (Ox)</div>
+                        <input type="range" id="slider-a" min="1" max="6" step="0.5" value="4" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-red-500">
+                        <div id="val-a" class="font-mono text-[11px] font-bold text-slate-200 mt-0.5">4.0</div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800 text-center">
+                        <div class="text-[10px] text-emerald-400 font-bold mb-1">Cạnh b (Oy)</div>
+                        <input type="range" id="slider-b" min="1" max="6" step="0.5" value="3" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-emerald-500">
+                        <div id="val-b" class="font-mono text-[11px] font-bold text-slate-200 mt-0.5">3.0</div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-1.5 rounded-lg border border-slate-800 text-center">
+                        <div class="text-[10px] text-blue-400 font-bold mb-1">Cạnh c (Oz)</div>
+                        <input type="range" id="slider-c" min="1" max="6" step="0.5" value="3" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-blue-500">
+                        <div id="val-c" class="font-mono text-[11px] font-bold text-slate-200 mt-0.5">3.0</div>
+                    </div>
+                </div>
+
+                <!-- Scalar Multiplier k Slider (Topic 4) -->
+                <div id="scale-slider-box" class="bg-slate-950/60 p-2 rounded-xl border border-amber-500/30 space-y-1 hidden">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-amber-400 font-bold">Hệ số thực $k$ trong phép nhân $k\cdot\vec{u}$:</span>
+                        <span id="val-k" class="font-mono font-bold text-amber-300 text-sm">k = 1.5</span>
+                    </div>
+                    <input type="range" id="slider-k" min="-3" max="3" step="0.5" value="1.5" class="w-full h-1.5 bg-slate-800 rounded appearance-none cursor-pointer accent-amber-400">
+                </div>
+
+                <!-- Custom Vector Selectors -->
+                <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800 space-y-1.5">
+                    <div class="text-[11px] font-bold text-slate-300">Chọn 2 véctơ thành phần:</div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <!-- Vector 1 Selector -->
+                        <div>
+                            <span class="text-cyan-400 font-bold block mb-0.5 text-[11px]">Véctơ 1 ($\vec{u}$):</span>
+                            <div class="flex items-center gap-1">
+                                <select id="sel-u-from" class="bg-slate-900 text-slate-100 border border-slate-700 rounded px-1 py-1 text-[11px] w-full">
+                                    <option value="A" selected>A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="A'">A'</option>
+                                    <option value="B'">B'</option>
+                                    <option value="C'">C'</option>
+                                    <option value="D'">D'</option>
+                                </select>
+                                <span class="text-slate-500">→</span>
+                                <select id="sel-u-to" class="bg-slate-900 text-slate-100 border border-slate-700 rounded px-1 py-1 text-[11px] w-full">
+                                    <option value="A">A</option>
+                                    <option value="B" selected>B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="A'">A'</option>
+                                    <option value="B'">B'</option>
+                                    <option value="C'">C'</option>
+                                    <option value="D'">D'</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Vector 2 Selector -->
+                        <div>
+                            <span class="text-emerald-400 font-bold block mb-0.5 text-[11px]">Véctơ 2 ($\vec{v}$):</span>
+                            <div class="flex items-center gap-1">
+                                <select id="sel-v-from" class="bg-slate-900 text-slate-100 border border-slate-700 rounded px-1 py-1 text-[11px] w-full">
+                                    <option value="A" selected>A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="A'">A'</option>
+                                    <option value="B'">B'</option>
+                                    <option value="C'">C'</option>
+                                    <option value="D'">D'</option>
+                                </select>
+                                <span class="text-slate-500">→</span>
+                                <select id="sel-v-to" class="bg-slate-900 text-slate-100 border border-slate-700 rounded px-1 py-1 text-[11px] w-full">
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D" selected>D</option>
+                                    <option value="A'">A'</option>
+                                    <option value="B'">B'</option>
+                                    <option value="C'">C'</option>
+                                    <option value="D'">D'</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: TÙY CHỌN HIỂN THỊ -->
+            <div class="space-y-1.5 shrink-0">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    <i class="fa-solid fa-eye text-cyan-400 mr-1"></i> Trợ giúp hiển thị 3D
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5 text-xs">
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-axes" checked class="w-3.5 h-3.5 accent-cyan-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Trục $Oxyz$ & Grid</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-coords" checked class="w-3.5 h-3.5 accent-cyan-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Tọa độ các đỉnh</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-helper-plane" checked class="w-3.5 h-3.5 accent-amber-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Mặt phẳng dựng hình</span>
+                    </label>
+
+                    <label class="flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-950/40 hover:bg-slate-800 cursor-pointer border border-slate-800">
+                        <input type="checkbox" id="toggle-autorotate" class="w-3.5 h-3.5 accent-cyan-500 rounded">
+                        <span class="text-slate-300 text-[11px]">Tự động xoay 3D</span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="border-slate-800 shrink-0">
+
+            <!-- SECTION 5: THẺ LÝ THUYẾT & TÍNH TOÁN KATEX CHI TIẾT -->
+            <div class="glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-cyan-500 shadow-xl mt-auto shrink-0" id="math-card-container">
+                
+                <!-- Dynamic Status Header -->
+                <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                    <span id="math-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 glow-cyan">
+                        NỘI DUNG 1: CÙNG PHƯƠNG & BẰNG NHAU
+                    </span>
+                    <span id="math-status-sub" class="text-[10px] font-semibold text-slate-400">
+                        Quan hệ giữa hai véctơ
+                    </span>
+                </div>
+
+                <!-- Definition & Theorem Box -->
+                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-xs leading-relaxed space-y-1">
+                    <div class="font-bold text-amber-400 flex items-center gap-1 text-[11px]">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                        <span id="theory-title">Định nghĩa & Tính chất SGK:</span>
+                    </div>
+                    <div id="theory-content" class="text-slate-300 italic text-[11px]"></div>
+                </div>
+
+                <!-- Vector Coordinates & Length -->
+                <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800 space-y-1 text-xs">
+                    <div class="text-[10px] font-bold text-slate-400">Tọa độ véctơ & Độ dài:</div>
+                    <div id="katex-u" class="overflow-x-auto py-0.5"></div>
+                    <div id="katex-v" class="overflow-x-auto py-0.5"></div>
+                </div>
+
+                <!-- Detailed Step-by-step Math Calculations -->
+                <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800 space-y-1.5 text-xs">
+                    <div class="text-[10px] font-bold text-cyan-400 flex items-center gap-1">
+                        <i class="fa-solid fa-square-root-variable"></i>
+                        <span>Công thức & Bước tính chi tiết:</span>
+                    </div>
+                    
+                    <!-- Main formula step -->
+                    <div id="katex-formula" class="overflow-x-auto py-1 border-y border-slate-800/80"></div>
+                    
+                    <!-- Result vector & conclusion -->
+                    <div id="katex-result" class="overflow-x-auto font-bold text-cyan-300 py-0.5"></div>
+                </div>
+
+                <!-- Extra Geometric Properties -->
+                <div id="geo-properties" class="bg-slate-950/60 p-2 rounded-lg text-[10px] space-y-1 border border-slate-800 text-slate-300">
+                    <div id="katex-extra-1"></div>
+                    <div id="katex-extra-2"></div>
+                </div>
+
+            </div>
+
+        </aside>
+
+        <!-- 3D VIEWPORT CONTAINER -->
+        <main id="viewport-panel" class="flex-1 h-full relative overflow-hidden bg-slate-950">
+
+            <!-- 3D WebGL Canvas -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- 3D Screen Overlay Labels -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10">
+                <!-- Vertices Labels -->
+                <div id="lbl-A" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-red-400 text-[10px] border border-red-500/40">A(0,0,0)</div>
+                <div id="lbl-B" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-red-400 text-[10px] border border-red-500/40">B</div>
+                <div id="lbl-C" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-slate-200 text-[10px] border border-slate-700">C</div>
+                <div id="lbl-D" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-emerald-400 text-[10px] border border-emerald-500/40">D</div>
+                <div id="lbl-A1" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-blue-400 text-[10px] border border-blue-500/40">A'</div>
+                <div id="lbl-B1" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-slate-200 text-[10px] border border-slate-700">B'</div>
+                <div id="lbl-C1" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-purple-400 text-[10px] border border-purple-500/40">C'</div>
+                <div id="lbl-D1" class="label-3d px-1.5 py-0.5 rounded bg-slate-900/90 text-slate-200 text-[10px] border border-slate-700">D'</div>
+
+                <!-- Special Points Labels -->
+                <div id="lbl-I" class="label-3d px-1.5 py-0.5 rounded bg-indigo-900/90 text-indigo-300 text-[10px] border border-indigo-500/40 font-bold">I</div>
+                <div id="lbl-O" class="label-3d px-1.5 py-0.5 rounded bg-amber-900/90 text-amber-300 text-[10px] border border-amber-500/40 font-bold">O</div>
+
+                <!-- Dynamic Vector Labels -->
+                <div id="lbl-vec-u" class="label-3d px-2 py-0.5 rounded bg-cyan-600/90 text-white text-[11px] border border-cyan-300 shadow-lg"></div>
+                <div id="lbl-vec-v" class="label-3d px-2 py-0.5 rounded bg-emerald-600/90 text-white text-[11px] border border-emerald-300 shadow-lg"></div>
+                <div id="lbl-vec-w" class="label-3d px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[11px] border-2 border-white shadow-xl glow-gold"></div>
+                <div id="lbl-vec-k" class="label-3d px-2 py-0.5 rounded bg-purple-600/90 text-white text-[11px] border border-purple-300 shadow-lg"></div>
+            </div>
+
+            <!-- Top Right Utility Buttons -->
+            <div class="absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto">
+                <button id="btn-reset-cam" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Đặt lại góc nhìn 3D">
+                    <i class="fa-solid fa-camera-rotate mr-1"></i> Góc nhìn 3D
+                </button>
+                <button id="btn-fullscreen" class="p-2 rounded-xl glass-card text-slate-300 hover:text-white hover:bg-slate-800 transition text-xs shadow-lg" title="Toàn màn hình">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Axis Legend Bar -->
+            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[90%] md:w-auto">
+                <div class="glass-card px-3 py-1.5 rounded-full text-[11px] text-slate-300 flex items-center justify-center gap-3 pointer-events-auto shadow-xl border border-slate-800">
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+                        <span class="font-bold text-red-400">Ox</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                        <span class="font-bold text-emerald-400">Oy</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+                        <span class="font-bold text-blue-400">Oz</span>
+                    </div>
+                    <span class="text-slate-700">|</span>
+                    <span class="text-slate-300"><i class="fa-solid fa-hand-pointer text-cyan-400 mr-1"></i> Kéo chuột / Vuốt để xoay 3D</span>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- MATHEMATICAL ENGINE & THREE.JS 3D SYSTEM                          -->
+    <!-- ================================================================= -->
+    <script>
+        /**
+         * FULL 3D MATHEMATICAL VECTOR SIMULATOR FOR HIGH SCHOOL GRADE 12
+         * HỌC TOÁN CÙNG THẦY TÔN TÚ
+         */
+
+        // State Management
+        const state = {
+            dim: { a: 4.0, b: 3.0, c: 3.0 },
+            topic: 'RELATIONS', // 'RELATIONS', 'ADD', 'SUB', 'SCALE', 'DOT', 'MIDPOINT'
+            presetIndex: 0,
+            k: 1.5,
+            u: { from: 'A', to: 'B' },
+            v: { from: 'D', to: 'C' },
+            toggles: {
+                axes: true,
+                coords: true,
+                helperPlane: true,
+                autoRotate: false
+            }
+        };
+
+        // Three.js Scene Variables
+        let scene, camera, renderer, controls;
+        let cuboidMesh, cuboidEdges;
+        let axesGroup, gridHelper;
+        let vecUMesh, vecVMesh, vecWMesh, vecKMesh;
+        let helperLineMesh, helperPlaneMesh;
+        let vertexPointMeshes = {};
+        let specialPointMeshes = {};
+
+        const container = document.getElementById('canvas-container');
+
+        // Color definitions
+        const colors = {
+            bg: 0x090d16,
+            cuboidFill: 0x1e293b,
+            cuboidBorder: 0x0284c7,
+            ox: 0xef4444, // Red
+            oy: 0x10b981, // Emerald
+            oz: 0x3b82f6, // Blue
+            vecU: 0x06b6d4, // Cyan
+            vecV: 0x10b981, // Emerald
+            vecW: 0xf59e0b, // Amber Gold
+            vecK: 0xa855f7  // Purple
+        };
+
+        // Safe KaTeX renderer wrapper to avoid crashes
+        function safeRenderKaTeX(latex, elementId, options = {}) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            try {
+                if (typeof katex !== 'undefined') {
+                    katex.render(latex, el, { throwOnError: false, ...options });
+                } else {
+                    el.innerText = latex;
+                }
+            } catch (err) {
+                console.warn("KaTeX error:", err);
+                el.innerText = latex;
+            }
+        }
+
+        // Helper to render text containing inline KaTeX math ($...$)
+        function renderMixedMath(content, elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.innerHTML = content;
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) {
+                    console.warn("renderMathInElement error:", e);
+                }
+            }
+        }
+
+        // Preset Definitions for 6 Topics
+        const topicPresets = {
+            'RELATIONS': [
+                { title: "1. Véctơ bằng nhau: $\\vec{AB} = \\vec{DC}$", uFrom: 'A', uTo: 'B', vFrom: 'D', vTo: 'C', desc: "Hai véctơ $\\vec{AB}$ và $\\vec{DC}$ cùng hướng và cùng độ dài $a$." },
+                { title: "2. Cùng phương, ngược hướng: $\\vec{AB}$ & $\\vec{CD}$", uFrom: 'A', uTo: 'B', vFrom: 'C', vTo: 'D', desc: "Hai véctơ nằm trên hai đường thẳng song song nhưng ngược chiều nhau: $\\vec{AB} = -\\vec{CD}$." },
+                { title: "3. Các véctơ cạnh đứng: $\\vec{AA'} = \\vec{BB'} = \\vec{CC'}$", uFrom: 'A', uTo: 'A\'', vFrom: 'B', vTo: 'B\'', desc: "Trong hình hộp chữ nhật, 4 véctơ cạnh bên song song, cùng hướng và bằng nhau." }
+            ],
+            'ADD': [
+                { title: "1. Quy tắc HBH mặt đáy: $\\vec{AB} + \\vec{AD} = \\vec{AC}$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Tổng hai véctơ cạnh góc vuông đáy là véctơ đường chéo hình chữ nhật đáy: $\\vec{AB} + \\vec{AD} = \\vec{AC}$." },
+                { title: "2. Quy tắc đường chéo hình hộp: $\\vec{AB} + \\vec{AD} + \\vec{AA'} = \\vec{AC'}$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Véctơ đường chéo hình hộp $\\vec{AC'}$ bằng tổng 3 véctơ xuất phát từ cùng đỉnh A: $\\vec{AB} + \\vec{AD} + \\vec{AA'} = \\vec{AC'}$." },
+                { title: "3. Quy tắc Tam giác nối tiếp: $\\vec{AB} + \\vec{BC} = \\vec{AC}$", uFrom: 'A', uTo: 'B', vFrom: 'B', vTo: 'C', desc: "Điểm cuối véctơ này là điểm đầu véctơ kia: $\\vec{AB} + \\vec{BC} = \\vec{AC}$." }
+            ],
+            'SUB': [
+                { title: "1. Phép trừ chung gốc: $\\vec{AB} - \\vec{AD} = \\vec{DB}$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Hiệu hai véctơ cùng gốc A: $\\vec{AB} - \\vec{AD} = \\vec{DB}$." },
+                { title: "2. Véctơ đối: $\\vec{AB} + \\vec{BA} = \\vec{0}$", uFrom: 'A', uTo: 'B', vFrom: 'B', vTo: 'A', desc: "Véctơ đối của $\\vec{AB}$ là $-\\vec{AB} = \\vec{BA}$ có cùng độ dài nhưng ngược hướng." },
+                { title: "3. Phép trừ chuyển thành phép cộng: $\\vec{u} - \\vec{v} = \\vec{u} + (-\\vec{v})$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Thực hiện phép trừ bằng cách cộng với véctơ đối của $\\vec{v}$." }
+            ],
+            'SCALE': [
+                { title: "1. Nhân số dương: $k \\cdot \\vec{AB}$ ($k = 1.5$)", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'B', kVal: 1.5, desc: "Véctơ $k\\vec{u}$ cùng hướng với $\\vec{u}$ khi $k > 0$, độ dài gấp $|k|$ lần: $|k\\vec{u}| = |k| \\cdot |\\vec{u}|$." },
+                { title: "2. Nhân số âm: $k \\cdot \\vec{AA'}$ ($k = -1.0$)", uFrom: 'A', uTo: 'A\'', vFrom: 'A', vTo: 'A\'', kVal: -1.0, desc: "Véctơ $k\\vec{u}$ ngược hướng với $\\vec{u}$ khi $k < 0$." },
+                { title: "3. Thu nhỏ véctơ: $k \\cdot \\vec{AC'}$ ($k = 0.5$)", uFrom: 'A', uTo: 'C\'', vFrom: 'A', vTo: 'C\'', kVal: 0.5, desc: "Tích $0.5\\vec{AC'}$ chính là véctơ từ đỉnh A đến tâm O của hình hộp: $0.5\\vec{AC'} = \\vec{AO}$." }
+            ],
+            'DOT': [
+                { title: "1. Tích vô hướng vuông góc: $\\vec{AB} \\cdot \\vec{AD} = 0$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Vì $AB \\perp AD$ nên $\\cos 90^\\circ = 0 \\implies \\vec{AB} \\cdot \\vec{AD} = 0$." },
+                { title: "2. Tích vô hướng cùng hướng: $\\vec{AB} \\cdot \\vec{DC} = a^2$", uFrom: 'A', uTo: 'B', vFrom: 'D', vTo: 'C', desc: "Góc giữa 2 véctơ bằng $0^\\circ$, $\\cos 0^\\circ = 1 \\implies \\vec{u} \\cdot \\vec{v} = |\\vec{u}||\\vec{v}|$." },
+                { title: "3. Góc giữa đường chéo đáy và cạnh: $\\vec{AB} \\cdot \\vec{AC}$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'C', desc: "Tính góc $\\theta = \\widehat{(\\vec{AB}, \\vec{AC})}$ qua công thức $\\cos \\theta = \\frac{\\vec{AB} \\cdot \\vec{AC}}{|\\vec{AB}||\\vec{AC}|}$." }
+            ],
+            'MIDPOINT': [
+                { title: "1. Tính chất Trung điểm I của AB: $\\vec{MA} + \\vec{MB} = 2\\vec{MI}$", uFrom: 'A', uTo: 'B', vFrom: 'A', vTo: 'D', desc: "Với M là điểm bất kỳ (ví dụ A'), ta luôn có $\\vec{A'A} + \\vec{A'B} = 2\\vec{A'I}$." },
+                { title: "2. Tính chất Tâm O hình hộp (Trung điểm AC')", uFrom: 'A', uTo: 'C\'', vFrom: 'A', vTo: 'B', desc: "Tâm O là trung điểm đường chéo AC': $\\vec{OA} + \\vec{OC'} = \\vec{0}$." }
+            ]
+        };
+
+        // Initialize 3D Engine
+        function init3D() {
+            // 1. Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(colors.bg);
+
+            // 2. Camera
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(10, 8, 12);
+
+            // 3. Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // 4. Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.target.set(2, 1.5, -1.5);
+            controls.touches = {
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+            };
+
+            // 5. Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(15, 25, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+            fillLight.position.set(-10, -10, -10);
+            scene.add(fillLight);
+
+            // 6. Build Geometry Objects
+            createOxyzAxes();
+            createCuboid();
+
+            // 7. Initial render & listeners
+            renderPresetsUI();
+            updateScene();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Coordinate Mapping: Math Space (x, y, z) -> Three.js 3D Space (x, z, -y)
+        function mathTo3D(x, y, z) {
+            return new THREE.Vector3(x, z, -y);
+        }
+
+        function getCuboidVertices(a, b, c) {
+            const verts = {
+                'A':  { math: { x: 0, y: 0, z: 0 }, pos3D: mathTo3D(0, 0, 0) },
+                'B':  { math: { x: a, y: 0, z: 0 }, pos3D: mathTo3D(a, 0, 0) },
+                'C':  { math: { x: a, y: b, z: 0 }, pos3D: mathTo3D(a, b, 0) },
+                'D':  { math: { x: 0, y: b, z: 0 }, pos3D: mathTo3D(0, b, 0) },
+                'A\'': { math: { x: 0, y: 0, z: c }, pos3D: mathTo3D(0, 0, c) },
+                'B\'': { math: { x: a, y: 0, z: c }, pos3D: mathTo3D(a, 0, c) },
+                'C\'': { math: { x: a, y: b, z: c }, pos3D: mathTo3D(a, b, c) },
+                'D\'': { math: { x: 0, y: b, z: c }, pos3D: mathTo3D(0, b, c) }
+            };
+
+            // Midpoint I of AB
+            verts['I'] = {
+                math: { x: a/2, y: 0, z: 0 },
+                pos3D: mathTo3D(a/2, 0, 0)
+            };
+
+            // Center O of Cuboid (Midpoint of AC')
+            verts['O'] = {
+                math: { x: a/2, y: b/2, z: c/2 },
+                pos3D: mathTo3D(a/2, b/2, c/2)
+            };
+
+            return verts;
+        }
+
+        function createOxyzAxes() {
+            axesGroup = new THREE.Group();
+            const axisLength = 9.0;
+
+            const ox = createSingleArrow(new THREE.Vector3(0,0,0), new THREE.Vector3(axisLength, 0, 0), colors.ox, false, true);
+            axesGroup.add(ox);
+
+            const oy = createSingleArrow(new THREE.Vector3(0,0,0), new THREE.Vector3(0, 0, -axisLength), colors.oy, false, true);
+            axesGroup.add(oy);
+
+            const oz = createSingleArrow(new THREE.Vector3(0,0,0), new THREE.Vector3(0, axisLength, 0), colors.oz, false, true);
+            axesGroup.add(oz);
+
+            gridHelper = new THREE.GridHelper(20, 20, 0x334155, 0x1e293b);
+            gridHelper.position.set(5, -0.01, -5);
+            axesGroup.add(gridHelper);
+
+            scene.add(axesGroup);
+        }
+
+        function createCuboid() {
+            const group = new THREE.Group();
+
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: colors.cuboidFill,
+                transparent: true,
+                opacity: 0.22,
+                roughness: 0.2,
+                clearcoat: 0.3,
+                side: THREE.DoubleSide
+            });
+            cuboidMesh = new THREE.Mesh(geo, mat);
+            group.add(cuboidMesh);
+
+            const edgeGeo = new THREE.EdgesGeometry(geo);
+            const edgeMat = new THREE.LineBasicMaterial({ color: colors.cuboidBorder, linewidth: 2 });
+            cuboidEdges = new THREE.LineSegments(edgeGeo, edgeMat);
+            group.add(cuboidEdges);
+
+            const sphereGeo = new THREE.SphereGeometry(0.08, 16, 16);
+            const sphereMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, emissive: 0x475569 });
+
+            ['A', 'B', 'C', 'D', 'A\'', 'B\'', 'C\'', 'D\''].forEach(vName => {
+                const sp = new THREE.Mesh(sphereGeo, sphereMat);
+                vertexPointMeshes[vName] = sp;
+                group.add(sp);
+            });
+
+            // Special Points I & O
+            const specialGeo = new THREE.SphereGeometry(0.1, 16, 16);
+            const matI = new THREE.MeshStandardMaterial({ color: 0x6366f1, emissive: 0x4338ca });
+            const matO = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706 });
+
+            specialPointMeshes['I'] = new THREE.Mesh(specialGeo, matI);
+            specialPointMeshes['O'] = new THREE.Mesh(specialGeo, matO);
+            group.add(specialPointMeshes['I']);
+            group.add(specialPointMeshes['O']);
+
+            scene.add(group);
+        }
+
+        // Sleek Mathematical Arrow Renderer (Thin shaft + Sharp cone)
+        function createSingleArrow(p1, p2, colorHex, isResultant = false, isAxis = false) {
+            const group = new THREE.Group();
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+
+            if (len < 0.001) return group;
+
+            const headLength = isResultant ? 0.32 : (isAxis ? 0.35 : 0.26);
+            const headRadius = isResultant ? 0.08 : (isAxis ? 0.08 : 0.065);
+            const shaftRadius = isResultant ? 0.025 : (isAxis ? 0.018 : 0.018);
+
+            const actualHeadLen = Math.min(headLength, len * 0.35);
+            const shaftLen = len - actualHeadLen;
+
+            if (shaftLen > 0) {
+                const shaftGeo = new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLen, 12);
+                const shaftMat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: 0.45,
+                    roughness: 0.2,
+                    metalness: 0.5
+                });
+                const shaftMesh = new THREE.Mesh(shaftGeo, shaftMat);
+                shaftMesh.position.set(0, shaftLen / 2, 0);
+                group.add(shaftMesh);
+            }
+
+            const headGeo = new THREE.ConeGeometry(headRadius, actualHeadLen, 16);
+            const headMat = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                emissive: colorHex,
+                emissiveIntensity: 0.6,
+                roughness: 0.1
+            });
+            const headMesh = new THREE.Mesh(headGeo, headMat);
+            headMesh.position.set(0, shaftLen + actualHeadLen / 2, 0);
+            group.add(headMesh);
+
+            group.position.copy(p1);
+            group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+
+            return group;
+        }
+
+        // Core Mathematical Calculations & Geometry Update
+        function updateScene() {
+            const { a, b, c } = state.dim;
+            const vertices = getCuboidVertices(a, b, c);
+
+            // Update Cuboid Mesh
+            cuboidMesh.scale.set(a, c, b);
+            cuboidMesh.position.set(a / 2, c / 2, -b / 2);
+
+            cuboidEdges.scale.set(a, c, b);
+            cuboidEdges.position.set(a / 2, c / 2, -b / 2);
+
+            Object.keys(vertices).forEach(vName => {
+                if (vertexPointMeshes[vName]) {
+                    vertexPointMeshes[vName].position.copy(vertices[vName].pos3D);
+                }
+            });
+
+            specialPointMeshes['I'].position.copy(vertices['I'].pos3D);
+            specialPointMeshes['O'].position.copy(vertices['O'].pos3D);
+            specialPointMeshes['I'].visible = (state.topic === 'MIDPOINT');
+            specialPointMeshes['O'].visible = (state.topic === 'MIDPOINT');
+
+            controls.target.set(a / 2, c / 2, -b / 2);
+
+            let uStart = vertices[state.u.from].pos3D;
+            let uEnd = vertices[state.u.to].pos3D;
+
+            let vStart = vertices[state.v.from].pos3D;
+            let vEnd = vertices[state.v.to].pos3D;
+
+            let uMath = {
+                x: vertices[state.u.to].math.x - vertices[state.u.from].math.x,
+                y: vertices[state.u.to].math.y - vertices[state.u.from].math.y,
+                z: vertices[state.u.to].math.z - vertices[state.u.from].math.z
+            };
+
+            let vMath = {
+                x: vertices[state.v.to].math.x - vertices[state.v.from].math.x,
+                y: vertices[state.v.to].math.y - vertices[state.v.from].math.y,
+                z: vertices[state.v.to].math.z - vertices[state.v.from].math.z
+            };
+
+            // Clear old 3D objects
+            if (vecUMesh) scene.remove(vecUMesh);
+            if (vecVMesh) scene.remove(vecVMesh);
+            if (vecWMesh) scene.remove(vecWMesh);
+            if (vecKMesh) scene.remove(vecKMesh);
+            if (helperLineMesh) scene.remove(helperLineMesh);
+
+            // Create Vectors u and v
+            vecUMesh = createSingleArrow(uStart, uEnd, colors.vecU, false);
+            vecVMesh = createSingleArrow(vStart, vEnd, colors.vecV, false);
+            scene.add(vecUMesh);
+            scene.add(vecVMesh);
+
+            let wMath = { x: 0, y: 0, z: 0 };
+            let wStart = uStart.clone();
+            let wEnd = uStart.clone();
+
+            if (state.topic === 'ADD') {
+                // Vector Addition: u + v
+                wMath = { x: uMath.x + vMath.x, y: uMath.y + vMath.y, z: uMath.z + vMath.z };
+                wEnd = mathTo3D(
+                    vertices[state.u.from].math.x + wMath.x,
+                    vertices[state.u.from].math.y + wMath.y,
+                    vertices[state.u.from].math.z + wMath.z
+                );
+                vecWMesh = createSingleArrow(wStart, wEnd, colors.vecW, true);
+                scene.add(vecWMesh);
+
+                if (state.toggles.helperPlane) {
+                    const uShiftEnd = uEnd.clone().add(mathTo3D(vMath.x, vMath.y, vMath.z));
+                    const points = [
+                        uEnd.x, uEnd.y, uEnd.z,  uShiftEnd.x, uShiftEnd.y, uShiftEnd.z,
+                        vEnd.x, vEnd.y, vEnd.z,  uShiftEnd.x, uShiftEnd.y, uShiftEnd.z
+                    ];
+                    const lineGeo = new THREE.BufferGeometry();
+                    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+                    const lineMat = new THREE.LineDashedMaterial({ color: 0xf59e0b, dashSize: 0.2, gapSize: 0.15, linewidth: 2 });
+                    helperLineMesh = new THREE.LineSegments(lineGeo, lineMat);
+                    helperLineMesh.computeLineDistances();
+                    scene.add(helperLineMesh);
+                }
+            }
+            else if (state.topic === 'SUB') {
+                // Vector Subtraction: u - v = u + (-v)
+                wMath = { x: uMath.x - vMath.x, y: uMath.y - vMath.y, z: uMath.z - vMath.z };
+                wStart = vEnd.clone();
+                wEnd = uEnd.clone();
+                vecWMesh = createSingleArrow(wStart, wEnd, colors.vecW, true);
+                scene.add(vecWMesh);
+
+                // Opposite vector -v
+                const negVEnd = uEnd.clone().add(mathTo3D(-vMath.x, -vMath.y, -vMath.z));
+                vecKMesh = createSingleArrow(uEnd, negVEnd, colors.vecK, false);
+                scene.add(vecKMesh);
+            }
+            else if (state.topic === 'SCALE') {
+                // Scalar Multiplication: k * u
+                const k = parseFloat(state.k);
+                wMath = { x: k * uMath.x, y: k * uMath.y, z: k * uMath.z };
+                wEnd = mathTo3D(
+                    vertices[state.u.from].math.x + wMath.x,
+                    vertices[state.u.from].math.y + wMath.y,
+                    vertices[state.u.from].math.z + wMath.z
+                );
+                vecWMesh = createSingleArrow(wStart, wEnd, colors.vecK, true);
+                scene.add(vecWMesh);
+            }
+
+            axesGroup.visible = state.toggles.axes;
+
+            updateMathUI(uMath, vMath, wMath, vertices);
+            renderMathInPage();
+        }
+
+        function updateMathUI(u, v, w, vertices) {
+            const badge = document.getElementById('math-status-badge');
+            const sub = document.getElementById('math-status-sub');
+            const card = document.getElementById('math-card-container');
+            const theoryContent = document.getElementById('theory-content');
+
+            const magU = Math.sqrt(u.x*u.x + u.y*u.y + u.z*u.z);
+            const magV = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+            const magW = Math.sqrt(w.x*w.x + w.y*w.y + w.z*w.z);
+
+            const dotUV = u.x*v.x + u.y*v.y + u.z*v.z;
+            let cosAngle = (magU * magV > 0) ? (dotUV / (magU * magV)) : 0;
+            cosAngle = Math.max(-1, Math.min(1, cosAngle));
+            const angleDeg = (Math.acos(cosAngle) * 180 / Math.PI).toFixed(1);
+
+            const uName = `${state.u.from}${state.u.to}`;
+            const vName = `${state.v.from}${state.v.to}`;
+
+            safeRenderKaTeX(`\\vec{u} = \\vec{${uName}} = (${u.x}, ${u.y}, ${u.z}) \\implies |\\vec{u}| = ${magU.toFixed(2)}`, 'katex-u');
+            safeRenderKaTeX(`\\vec{v} = \\vec{${vName}} = (${v.x}, ${v.y}, ${v.z}) \\implies |\\vec{v}| = ${magV.toFixed(2)}`, 'katex-v');
+
+            const currentPreset = (topicPresets[state.topic] && topicPresets[state.topic][state.presetIndex]) || {};
+            renderMixedMath(currentPreset.desc || "", 'theory-content');
+
+            if (state.topic === 'RELATIONS') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 glow-cyan";
+                badge.innerText = "NỘI DUNG 1: CÙNG PHƯƠNG & BẰNG NHAU";
+                renderMixedMath("Quan hệ hướng và độ dài giữa $\\vec{u}$ và $\\vec{v}$", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-cyan-500 shadow-xl mt-auto shrink-0";
+
+                const isSameDir = (u.x*v.x >= 0 && u.y*v.y >= 0 && u.z*v.z >= 0) && Math.abs(cosAngle - 1) < 0.01;
+                const isEqual = (u.x === v.x && u.y === v.y && u.z === v.z);
+                const isOpposite = (u.x === -v.x && u.y === -v.y && u.z === -v.z);
+
+                let relationText = "\\text{Không cùng phương}";
+                if (Math.abs(Math.abs(cosAngle) - 1) < 0.01) {
+                    if (isEqual) relationText = "\\vec{u} = \\vec{v} \\quad (\\text{Hai véctơ bằng nhau})";
+                    else if (isOpposite) relationText = "\\vec{u} = -\\vec{v} \\quad (\\text{Hai véctơ đối nhau})";
+                    else if (isSameDir) relationText = "\\vec{u} \\uparrow\\uparrow \\vec{v} \\quad (\\text{Cùng phương, cùng hướng})";
+                    else relationText = "\\vec{u} \\uparrow\\downarrow \\vec{v} \\quad (\\text{Cùng phương, ngược hướng})";
+                }
+
+                safeRenderKaTeX(`\\text{Góc giữa 2 véctơ: } \\widehat{(\\vec{u}, \\vec{v})} = ${angleDeg}^\\circ`, 'katex-formula');
+                safeRenderKaTeX(relationText, 'katex-result');
+
+                document.getElementById('katex-extra-1').innerHTML = "";
+                document.getElementById('katex-extra-2').innerHTML = "";
+            }
+            else if (state.topic === 'ADD') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 glow-emerald";
+                badge.innerText = "NỘI DUNG 2: PHÉP CỘNG & QUY TẮC HÌNH HỘP";
+                renderMixedMath("Quy tắc Tam giác, Hình bình hành & Hình hộp", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-emerald-500 shadow-xl mt-auto shrink-0";
+
+                safeRenderKaTeX(`\\vec{w} = \\vec{u} + \\vec{v} = (${u.x}+${v.x},\\, ${u.y}+${v.y},\\, ${u.z}+${v.z})`, 'katex-formula');
+                safeRenderKaTeX(`\\implies \\vec{w} = (${w.x},\\, ${w.y},\\, ${w.z}),\\quad |\\vec{w}| = ${magW.toFixed(2)}`, 'katex-result');
+
+                safeRenderKaTeX(`\\text{Quy tắc hình hộp: } \\vec{AB} + \\vec{AD} + \\vec{AA'} = \\vec{AC'} = (${state.dim.a}, ${state.dim.b}, ${state.dim.c})`, 'katex-extra-1');
+                safeRenderKaTeX(`\\text{Độ dài đường chéo hình hộp: } |\\vec{AC'}| = \\sqrt{a^2+b^2+c^2} = ${Math.sqrt(state.dim.a**2 + state.dim.b**2 + state.dim.c**2).toFixed(2)}`, 'katex-extra-2');
+            }
+            else if (state.topic === 'SUB') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 glow-purple";
+                badge.innerText = "NỘI DUNG 3: PHÉP TRỪ VÉCTƠ & VÉCTƠ ĐỐI";
+                renderMixedMath("Hiệu 2 véctơ $\\vec{u} - \\vec{v} = \\vec{u} + (-\\vec{v})$", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-purple-500 shadow-xl mt-auto shrink-0";
+
+                safeRenderKaTeX(`\\vec{w} = \\vec{u} - \\vec{v} = (${u.x}-${v.x},\\, ${u.y}-${v.y},\\, ${u.z}-${v.z})`, 'katex-formula');
+                safeRenderKaTeX(`\\implies \\vec{w} = (${w.x},\\, ${w.y},\\, ${w.z}),\\quad |\\vec{w}| = ${magW.toFixed(2)}`, 'katex-result');
+
+                safeRenderKaTeX(`\\text{Véctơ đối: } -\\vec{v} = (${-v.x}, ${-v.y}, ${-v.z})`, 'katex-extra-1');
+                safeRenderKaTeX(`\\text{Phép trừ chung gốc A: } \\vec{AB} - \\vec{AD} = \\vec{DB}`, 'katex-extra-2');
+            }
+            else if (state.topic === 'SCALE') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 glow-gold";
+                badge.innerText = "NỘI DUNG 4: PHÉP NHÂN SỐ VỚI VÉCTƠ";
+                renderMixedMath("Tích $k \\cdot \\vec{u}$ trong không gian", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-amber-500 shadow-xl mt-auto shrink-0";
+
+                const k = parseFloat(state.k);
+                safeRenderKaTeX(`\\vec{w} = ${k} \\cdot \\vec{u} = (${k}\\cdot ${u.x},\\, ${k}\\cdot ${u.y},\\, ${k}\\cdot ${u.z})`, 'katex-formula');
+                safeRenderKaTeX(`\\implies \\vec{w} = (${w.x.toFixed(1)},\\, ${w.y.toFixed(1)},\\, ${w.z.toFixed(1)}),\\quad |\\vec{w}| = ${magW.toFixed(2)}`, 'katex-result');
+
+                safeRenderKaTeX(`\\text{Tỷ lệ độ dài: } |k\\vec{u}| = |k| \\cdot |\\vec{u}| = ${Math.abs(k).toFixed(1)} \\times ${magU.toFixed(2)} = ${magW.toFixed(2)}`, 'katex-extra-1');
+                safeRenderKaTeX(`\\text{Hướng: } ${k >= 0 ? "\\text{Cùng hướng vì } k \\ge 0" : "\\text{Ngược hướng vì } k < 0"}`, 'katex-extra-2');
+            }
+            else if (state.topic === 'DOT') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40";
+                badge.innerText = "NỘI DUNG 5: GÓC & TÍCH VÔ HƯỚNG";
+                renderMixedMath("Công thức Tích vô hướng $\\vec{u} \\cdot \\vec{v} = |\\vec{u}||\\vec{v}|\\cos\\theta$", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-rose-500 shadow-xl mt-auto shrink-0";
+
+                safeRenderKaTeX(`\\vec{u} \\cdot \\vec{v} = u_x v_x + u_y v_y + u_z v_z = (${u.x})(${v.x}) + (${u.y})(${v.y}) + (${u.z})(${v.z})`, 'katex-formula');
+                safeRenderKaTeX(`\\implies \\vec{u} \\cdot \\vec{v} = ${dotUV}`, 'katex-result');
+
+                safeRenderKaTeX(`\\cos \\widehat{(\\vec{u}, \\vec{v})} = \\frac{\\vec{u} \\cdot \\vec{v}}{|\\vec{u}||\\vec{v}|} = \\frac{${dotUV}}{${(magU*magV).toFixed(2)}} = ${cosAngle.toFixed(3)}`, 'katex-extra-1');
+                safeRenderKaTeX(`\\implies \\text{Góc } \\widehat{(\\vec{u}, \\vec{v})} = ${angleDeg}^\\circ \\quad ${dotUV === 0 ? "(\\vec{u} \\perp \\vec{v})" : ""}`, 'katex-extra-2');
+            }
+            else if (state.topic === 'MIDPOINT') {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40";
+                badge.innerText = "NỘI DUNG 6: TÍNH CHẤT TRUNG ĐIỂM & TÂM";
+                renderMixedMath("Trung điểm $I$ và Tâm $O$ hình hộp", 'math-status-sub');
+                card.className = "glass-card rounded-xl p-3 flex flex-col gap-2.5 border-l-4 border-indigo-500 shadow-xl mt-auto shrink-0";
+
+                safeRenderKaTeX(`\\text{Tọa độ trung điểm I của AB: } I\\left(\\frac{a}{2}, 0, 0\\right) = (${state.dim.a/2}, 0, 0)`, 'katex-formula');
+                safeRenderKaTeX(`\\text{Đẳng thức Véctơ: } \\vec{IA} + \\vec{IB} = \\vec{0} \\implies \\vec{MA} + \\vec{MB} = 2\\vec{MI}`, 'katex-result');
+
+                safeRenderKaTeX(`\\text{Tọa độ tâm O của HH: } O\\left(\\frac{a}{2}, \\frac{b}{2}, \\frac{c}{2}\\right) = (${state.dim.a/2}, ${state.dim.b/2}, ${state.dim.c/2})`, 'katex-extra-1');
+                safeRenderKaTeX(`\\text{Tính chất Tâm O: } \\vec{OA} + \\vec{OC'} = \\vec{0},\\quad \\vec{OB} + \\vec{OD'} = \\vec{0}`, 'katex-extra-2');
+            }
+        }
+
+        function renderMathInPage() {
+            if (typeof renderMathInElement === 'function') {
+                try {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {
+                    console.warn("Auto-render math error:", e);
+                }
+            }
+        }
+
+        const tempVec = new THREE.Vector3();
+        function updateScreenLabels() {
+            const { a, b, c } = state.dim;
+            const vertices = getCuboidVertices(a, b, c);
+
+            const toggleCoords = state.toggles.coords;
+            Object.keys(vertices).forEach(vName => {
+                const labelId = `lbl-${vName.replace("'", "1")}`;
+                const el = document.getElementById(labelId);
+                if (el) {
+                    if (toggleCoords) {
+                        el.style.display = 'block';
+                        const m = vertices[vName].math;
+                        el.innerText = `${vName}(${m.x}, ${m.y}, ${m.z})`;
+                        updateSingleLabel(labelId, vertices[vName].pos3D);
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+
+            const uStart = vertices[state.u.from].pos3D;
+            const uEnd = vertices[state.u.to].pos3D;
+            const vStart = vertices[state.v.from].pos3D;
+            const vEnd = vertices[state.v.to].pos3D;
+
+            updateSingleLabel('lbl-vec-u', uStart.clone().add(uEnd).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.2, 0)));
+            updateSingleLabel('lbl-vec-v', vStart.clone().add(vEnd).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.2, 0)));
+            
+            safeRenderKaTeX(`\\vec{u}`, 'lbl-vec-u');
+            safeRenderKaTeX(`\\vec{v}`, 'lbl-vec-v');
+
+            const lblW = document.getElementById('lbl-vec-w');
+            const lblK = document.getElementById('lbl-vec-k');
+
+            if (state.topic === 'ADD') {
+                if (lblW) lblW.style.display = 'block';
+                if (lblK) lblK.style.display = 'none';
+                let uMath = { x: vertices[state.u.to].math.x - vertices[state.u.from].math.x, y: vertices[state.u.to].math.y - vertices[state.u.from].math.y, z: vertices[state.u.to].math.z - vertices[state.u.from].math.z };
+                let vMath = { x: vertices[state.v.to].math.x - vertices[state.v.from].math.x, y: vertices[state.v.to].math.y - vertices[state.v.from].math.y, z: vertices[state.v.to].math.z - vertices[state.v.from].math.z };
+                const wEnd = mathTo3D(vertices[state.u.from].math.x + uMath.x + vMath.x, vertices[state.u.from].math.y + uMath.y + vMath.y, vertices[state.u.from].math.z + uMath.z + vMath.z);
+                updateSingleLabel('lbl-vec-w', uStart.clone().add(wEnd).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.3, 0)));
+                safeRenderKaTeX(`\\vec{w} = \\vec{u} + \\vec{v}`, 'lbl-vec-w');
+            } else if (state.topic === 'SUB') {
+                if (lblW) lblW.style.display = 'block';
+                if (lblK) lblK.style.display = 'block';
+                updateSingleLabel('lbl-vec-w', vEnd.clone().add(uEnd).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.3, 0)));
+                safeRenderKaTeX(`\\vec{w} = \\vec{u} - \\vec{v}`, 'lbl-vec-w');
+                safeRenderKaTeX(`-\\vec{v}`, 'lbl-vec-k');
+            } else if (state.topic === 'SCALE') {
+                if (lblW) lblW.style.display = 'block';
+                if (lblK) lblK.style.display = 'none';
+                const k = parseFloat(state.k);
+                safeRenderKaTeX(`${k}\\vec{u}`, 'lbl-vec-w');
+            } else {
+                if (lblW) lblW.style.display = 'none';
+                if (lblK) lblK.style.display = 'none';
+            }
+        }
+
+        function updateSingleLabel(elementId, worldPos) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            tempVec.copy(worldPos);
+            tempVec.project(camera);
+
+            if (tempVec.z > 1) {
+                el.style.opacity = '0';
+                return;
+            }
+
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            const x = (tempVec.x * widthHalf) + widthHalf;
+            const y = (-(tempVec.y * heightHalf)) + heightHalf;
+
+            el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            el.style.opacity = '1';
+        }
+
+        function renderPresetsUI() {
+            const container = document.getElementById('preset-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const list = topicPresets[state.topic] || [];
+            list.forEach((item, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `preset-btn p-2 rounded-lg border border-slate-800 bg-slate-950/60 hover:bg-slate-800 text-left transition flex items-center justify-between ${idx === state.presetIndex ? 'ring-1 ring-cyan-400 bg-slate-800' : ''}`;
+                btn.innerHTML = `
+                    <div class="font-medium text-slate-200 text-[11px]" id="preset-title-${idx}"></div>
+                    <i class="fa-solid fa-chevron-right text-[9px] text-cyan-400 ml-1 shrink-0"></i>
+                `;
+                btn.addEventListener('click', () => {
+                    state.presetIndex = idx;
+                    state.u.from = item.uFrom;
+                    state.u.to = item.uTo;
+                    state.v.from = item.vFrom;
+                    state.v.to = item.vTo;
+                    if (item.kVal !== undefined) {
+                        state.k = item.kVal;
+                        document.getElementById('slider-k').value = state.k;
+                        document.getElementById('val-k').innerText = `k = ${state.k}`;
+                    }
+                    updateSelectDropdowns();
+                    renderPresetsUI();
+                    updateScene();
+                });
+                container.appendChild(btn);
+                renderMixedMath(item.title, `preset-title-${idx}`);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (state.toggles.autoRotate && controls) {
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 2.0;
+            } else if (controls) {
+                controls.autoRotate = false;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+            updateScreenLabels();
+        }
+
+        function onWindowResize() {
+            if (!container || !camera || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function setupUIEventListeners() {
+            // Mobile View Switcher (3D Canvas vs Math Sidebar)
+            const mobileBtn3D = document.getElementById('mobile-tab-3d');
+            const mobileBtnMath = document.getElementById('mobile-tab-math');
+            const sidebar = document.getElementById('sidebar-panel');
+            const viewport = document.getElementById('viewport-panel');
+
+            if (mobileBtn3D && mobileBtnMath) {
+                mobileBtn3D.addEventListener('click', () => {
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.add('hidden');
+                    viewport.classList.remove('hidden');
+                    onWindowResize();
+                });
+
+                mobileBtnMath.addEventListener('click', () => {
+                    mobileBtnMath.className = "px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-bold transition";
+                    mobileBtn3D.className = "px-2.5 py-1 rounded-md hover:bg-slate-800 transition";
+                    sidebar.classList.remove('hidden');
+                    viewport.classList.add('hidden');
+                });
+            }
+
+            // Topic Switcher
+            const topicsMap = {
+                'topic-relations': 'RELATIONS',
+                'topic-add': 'ADD',
+                'topic-sub': 'SUB',
+                'topic-scale': 'SCALE',
+                'topic-dot': 'DOT',
+                'topic-mid': 'MIDPOINT'
+            };
+
+            Object.keys(topicsMap).forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active', 'border-cyan-500/50', 'bg-cyan-950/40'));
+                        
+                        state.topic = topicsMap[btnId];
+                        state.presetIndex = 0;
+
+                        btn.classList.add('active', 'border-cyan-500/50', 'bg-cyan-950/40');
+
+                        // Toggle Scale Slider Box visibility
+                        const scaleBox = document.getElementById('scale-slider-box');
+                        if (state.topic === 'SCALE') {
+                            scaleBox.classList.remove('hidden');
+                        } else {
+                            scaleBox.classList.add('hidden');
+                        }
+
+                        // Apply first preset default
+                        const p0 = topicPresets[state.topic][0];
+                        if (p0) {
+                            state.u.from = p0.uFrom;
+                            state.u.to = p0.uTo;
+                            state.v.from = p0.vFrom;
+                            state.v.to = p0.vTo;
+                            if (p0.kVal !== undefined) state.k = p0.kVal;
+                        }
+
+                        updateSelectDropdowns();
+                        renderPresetsUI();
+                        updateScene();
+                    });
+                }
+            });
+
+            // Dimension sliders
+            ['a', 'b', 'c'].forEach(dimKey => {
+                const slider = document.getElementById(`slider-${dimKey}`);
+                if (slider) {
+                    slider.addEventListener('input', (e) => {
+                        state.dim[dimKey] = parseFloat(e.target.value);
+                        document.getElementById(`val-${dimKey}`).innerText = state.dim[dimKey].toFixed(1);
+                        updateScene();
+                    });
+                }
+            });
+
+            const sliderK = document.getElementById('slider-k');
+            if (sliderK) {
+                sliderK.addEventListener('input', (e) => {
+                    state.k = parseFloat(e.target.value);
+                    document.getElementById('val-k').innerText = `k = ${state.k}`;
+                    updateScene();
+                });
+            }
+
+            const resetDimBtn = document.getElementById('btn-reset-dim');
+            if (resetDimBtn) {
+                resetDimBtn.addEventListener('click', () => {
+                    state.dim = { a: 4.0, b: 3.0, c: 3.0 };
+                    ['a', 'b', 'c'].forEach(k => {
+                        document.getElementById(`slider-${k}`).value = state.dim[k];
+                        document.getElementById(`val-${k}`).innerText = state.dim[k].toFixed(1);
+                    });
+                    updateScene();
+                });
+            }
+
+            ['u', 'v'].forEach(vecKey => {
+                ['from', 'to'].forEach(dirKey => {
+                    const sel = document.getElementById(`sel-${vecKey}-${dirKey}`);
+                    if (sel) {
+                        sel.addEventListener('change', (e) => {
+                            state[vecKey][dirKey] = e.target.value;
+                            updateScene();
+                        });
+                    }
+                });
+            });
+
+            // Display Toggles
+            document.getElementById('toggle-axes').addEventListener('change', (e) => {
+                state.toggles.axes = e.target.checked;
+                updateScene();
+            });
+            document.getElementById('toggle-coords').addEventListener('change', (e) => {
+                state.toggles.coords = e.target.checked;
+                updateScene();
+            });
+            document.getElementById('toggle-helper-plane').addEventListener('change', (e) => {
+                state.toggles.helperPlane = e.target.checked;
+                updateScene();
+            });
+            document.getElementById('toggle-autorotate').addEventListener('change', (e) => {
+                state.toggles.autoRotate = e.target.checked;
+            });
+
+            document.getElementById('btn-reset-cam').addEventListener('click', () => {
+                animateCameraTo(new THREE.Vector3(10, 8, 12), new THREE.Vector3(state.dim.a / 2, state.dim.c / 2, -state.dim.b / 2));
+            });
+
+            document.getElementById('btn-fullscreen').addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.warn(e));
+                } else {
+                    document.exitFullscreen().catch(e => console.warn(e));
+                }
+            });
+        }
+
+        function updateSelectDropdowns() {
+            document.getElementById('sel-u-from').value = state.u.from;
+            document.getElementById('sel-u-to').value = state.u.to;
+            document.getElementById('sel-v-from').value = state.v.from;
+            document.getElementById('sel-v-to').value = state.v.to;
+        }
+
+        function animateCameraTo(targetPos, targetLookAt) {
+            const startPos = camera.position.clone();
+            const startLook = controls.target.clone();
+            const startTime = performance.now();
+            const duration = 500;
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                camera.position.lerpVectors(startPos, targetPos, ease);
+                controls.target.lerpVectors(startLook, targetLookAt, ease);
+                controls.update();
+
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        window.onload = function() {
+            init3D();
+            setupUIEventListeners();
+            safeRenderKaTeX("$ABCD.A'B'C'D'$", "badge-box-name");
+            renderMathInPage();
+            animate();
+        };
+
+    </script>
+</body>
+</html>
